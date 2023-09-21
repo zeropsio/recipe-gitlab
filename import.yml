@@ -5,9 +5,11 @@ project:
     - gitlab
 services:
   - hostname: db
+    priority: 10
     type: postgresql@12
     mode: NON_HA
   - hostname: gitlab
+    priority: 5
     type: ubuntu@22.04
     envVariables:
       GITLAB_ROOT_PASSWORD: <@generateRandomString(<12>)>
@@ -20,5 +22,5 @@ services:
     ports:
       - port: 80
         httpSupport: true
-#    enableSubdomainAccess: true
-#    buildFromGit:
+    enableSubdomainAccess: true
+    buildFromGit: https://github.com/zeropsio/recipe-gitlab

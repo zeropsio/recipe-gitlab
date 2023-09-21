@@ -1,16 +1,26 @@
 gitlab:
+  build:
+    deploy:
+      - gitlab.rb
   run:
     prepare:
       - apt-get update
       - apt-get install -y curl openssh-server ca-certificates tzdata perl
+      - apt-get install -y postgresql-client
       - curl https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh | bash
-      - apt-get install gitlab-ce
+      - apt-get install gitlab-ce=15.5.0-ce.0 # Remove old version after having newer version of postgresql.
     envReplace:
       target:
         - gitlab.rb
       delimiter: $$
     init:
-      - mv gitlab.rb /etc/gitlab/gitlab.rb
-      - gitlab-rake gitlab:setup force=yes || true # Try to initialize the database, noop if already seeded.
+      - cp gitlab.rb /etc/gitlab/gitlab.rb
+      # Try to initialize the database, noop if already seeded.
+      - |
+        if [ "$( PGPASSWORD=$db_password psql -h $db_user -U db -XtAc "SELECT 'OK' FROM pg_database WHERE datname='gitlabhq_production'" )" != 'OK' ]
+        then
+          gitlab-ctl reconfigure
+          gitlab-rake gitlab:setup force=yes
+        fi
       - gitlab-ctl reconfigure
     start: gitlab-ctl tail
